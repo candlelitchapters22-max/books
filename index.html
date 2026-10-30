@@ -27,6 +27,7 @@
 }
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{
   margin:0; min-height:100vh; overflow-x:hidden;
   font-family:Nunito,sans-serif; color:var(--text);
@@ -70,6 +71,8 @@ input:focus{outline:none; border-color:var(--medium); box-shadow:0 0 0 4px rgba(
 button{padding:.9rem; font:inherit; font-weight:700; border-radius:999px; cursor:pointer; border:1.5px solid transparent; background:#fff; color:var(--dark); transition:transform .2s,box-shadow .2s}
 button:hover{transform:translateY(-2px); box-shadow:0 8px 16px rgba(108,91,158,.25)}
 button.main{background:linear-gradient(135deg,var(--dark),var(--medium)); color:#fff}
+.linkbtn{background:none; border:none; box-shadow:none; color:var(--title); text-decoration:underline; padding:.2rem; font-weight:600}
+.linkbtn:hover{box-shadow:none; transform:none}
 .note{min-height:1.4em; margin:.8rem 0 0; font-size:.92rem; color:#9b3d70}
 
 @media(max-width:760px){
@@ -130,7 +133,7 @@ button.main{background:linear-gradient(135deg,var(--dark),var(--medium)); color:
 </div>
 
 <main class="stage">
-  <div class="login">
+  <div class="login" id="loginBox">
     <!-- ✏️ CHANGE 4: the big title -->
     <h1>My Reading Nook</h1>
     <!-- ✏️ CHANGE 5: the first quote shown. All your quotes are listed in CHANGE 9 below. -->
@@ -139,12 +142,21 @@ button.main{background:linear-gradient(135deg,var(--dark),var(--medium)); color:
     <!-- ✏️ CHANGE 6: the heading above the login boxes -->
     <h2>Welcome back</h2>
     <form id="loginForm">
-      <input type="email" placeholder="Email" required>
-      <input type="password" placeholder="Password" required>
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required>
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
       <button class="main" type="submit">Log in</button>
       <button type="button" id="signupBtn">Create account</button>
+      <button type="button" class="linkbtn" id="resetBtn">Forgot password?</button>
     </form>
     <p class="note" id="note"></p>
+  </div>
+
+  <!-- SHOWN AFTER YOU LOG IN -->
+  <div class="login" id="welcomeBox" hidden>
+    <h1>My Reading Nook</h1>
+    <h2 id="hello" style="margin-top:1.2rem">Welcome back</h2>
+    <p class="quote" style="min-height:0">You are logged in. Your library will appear here in the next steps.</p>
+    <button class="main" id="logoutBtn" style="width:100%">Log out</button>
   </div>
 </main>
 
@@ -215,14 +227,83 @@ loadAny(character, function(img){
   }, quoteSpeed);
 })();
 
-/* The buttons only show a message for now. The next step connects real login. */
-const note = document.getElementById("note");
-document.getElementById("loginForm").addEventListener("submit", function(e){
-  e.preventDefault();
-  note.textContent = "Login is not connected yet. That is the next step.";
+</script>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* ✏️ CHANGE 10: YOUR FIREBASE SETTINGS (already filled in for you). */
+const firebaseConfig = {
+  apiKey: "AIzaSyDjs_9C_XzAOgEU8Idunna7pPULT9AaJjE",
+  authDomain: "my-complete-book-tracker.firebaseapp.com",
+  projectId: "my-complete-book-tracker",
+  storageBucket: "my-complete-book-tracker.firebasestorage.app",
+  messagingSenderId: "883912096588",
+  appId: "1:883912096588:web:b8ce23ae9f7a0ce1d42de9"
+};
+
+/* ---- you do not need to change anything below this line ---- */
+const auth = getAuth(initializeApp(firebaseConfig));
+const $ = function(id){ return document.getElementById(id); };
+const say = function(text){ $("note").textContent = text; };
+
+const messages = {
+  "auth/invalid-credential": "Wrong email or password.",
+  "auth/user-not-found": "No account with this email. Click Create account first.",
+  "auth/wrong-password": "Wrong email or password.",
+  "auth/email-already-in-use": "This email already has an account. Click Log in instead.",
+  "auth/weak-password": "Password needs at least 6 characters.",
+  "auth/invalid-email": "That email address does not look right.",
+  "auth/missing-password": "Please type your password.",
+  "auth/too-many-requests": "Too many tries. Please wait a few minutes and try again.",
+  "auth/network-request-failed": "No internet connection. Please try again.",
+  "auth/operation-not-allowed": "Email login is not turned on in Firebase, or new accounts are switched off."
+};
+function friendly(err){ return messages[err.code] || ("Something went wrong: " + err.code); }
+
+// Login only works when the page is online, not when double-clicked from your computer
+function onlineCheck(){
+  if (location.protocol === "file:"){
+    say("Login works only when the page is online. Follow the 'put it online' steps first.");
+    return false;
+  }
+  return true;
+}
+
+$("loginForm").addEventListener("submit", async function(e){
+  e.preventDefault(); say("");
+  if (!onlineCheck()) return;
+  try { await signInWithEmailAndPassword(auth, $("email").value, $("password").value); }
+  catch (err) { say(friendly(err)); }
 });
-document.getElementById("signupBtn").addEventListener("click", function(){
-  note.textContent = "Create account is not connected yet. That is the next step.";
+
+$("signupBtn").addEventListener("click", async function(){
+  say("");
+  if (!onlineCheck()) return;
+  if (!$("email").value || !$("password").value){ say("Type your email and a password first."); return; }
+  try { await createUserWithEmailAndPassword(auth, $("email").value, $("password").value); }
+  catch (err) { say(friendly(err)); }
+});
+
+$("resetBtn").addEventListener("click", async function(){
+  say("");
+  if (!onlineCheck()) return;
+  if (!$("email").value){ say("Type your email first, then click Forgot password."); return; }
+  try { await sendPasswordResetEmail(auth, $("email").value); say("Reset email sent. Check your inbox and spam folder."); }
+  catch (err) { say(friendly(err)); }
+});
+
+$("logoutBtn").addEventListener("click", function(){ signOut(auth); });
+
+// Runs when the page opens, and every time you log in or out
+onAuthStateChanged(auth, function(user){
+  $("loginBox").hidden = !!user;
+  $("welcomeBox").hidden = !user;
+  if (user){
+    $("hello").textContent = "Welcome, " + user.email.split("@")[0];
+    $("password").value = "";
+  }
 });
 </script>
 </body>
