@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ✏️ CHANGE 1: the name shown on the browser tab -->
+<title>My Reading Nook</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,700;1,500;1,600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+/* ✏️ CHANGE 2: COLORS. Change any code after the # to try a new color. */
+:root{
+  --dark:   #6C5B9E;   /* deep purple */
+  --medium: #A797DB;   /* medium lavender */
+  --light:  #CFC3EE;   /* light lavender */
+  --pale:   #D3C8EC;   /* PAGE BACKGROUND: plain lavender (a bit darker) */
+  --pink:   #F9D1E3;   /* soft pink */
+  --text:   #2f2450;   /* text color */
+  --title:  #3f2f6e;   /* DARK purple for the title and headings. Darker code = darker text */
+  --quote:  #2f2450;   /* DARK purple for the quotes */
+
+  /* ✏️ CHANGE 8: SIZES. Change the numbers, save, then press F5 in Chrome. */
+  --strip-width: 150px;           /* WIDTH of the 3 still pictures on the left edge */
+  --girl-width:  min(20vw,270px); /* SIZE of the girl in the bottom right corner */
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; overflow-x:hidden;
+  font-family:Nunito,sans-serif; color:var(--text);
+  background:var(--pale);
+}
+@keyframes fadein{from{opacity:0; transform:translateY(18px)}to{opacity:1; transform:none}}
+@keyframes float{50%{transform:translateY(-14px) rotate(6deg)}}
+@keyframes drift{50%{transform:translate(20px,-12px) rotate(-9deg)}}
+@keyframes twinkle{50%{transform:scale(1.35) rotate(15deg); opacity:.45}}
+@keyframes sway{50%{transform:rotate(2.5deg) translateY(-6px)}}
+
+/* ---------- DOODLES (they move) ---------- */
+.doodles{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden}
+.d{position:absolute; fill:none; stroke:currentColor; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round}
+.d.float  {animation:float 7s ease-in-out infinite}
+.d.drift  {animation:drift 11s ease-in-out infinite}
+.d.twinkle{animation:twinkle 3.5s ease-in-out infinite}
+.d.big{width:64px; height:64px}
+.d.mid{width:46px; height:46px}
+.d.small{width:30px; height:30px}
+
+/* ---------- PICTURES THAT STAY ---------- */
+.strip{position:fixed; left:0; top:0; bottom:0; width:var(--strip-width); display:grid; grid-template-rows:repeat(3,1fr); z-index:2}
+.tile{position:relative; overflow:hidden; background:var(--light)}
+.tile img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.char{position:fixed; right:0; bottom:0; width:var(--girl-width); mix-blend-mode:multiply; z-index:2; pointer-events:none; transform-origin:bottom center; animation:sway 6s ease-in-out infinite}
+
+/* ---------- PAGE LAYOUT ---------- */
+.stage{
+  position:relative; z-index:3; min-height:100vh; display:grid; grid-template-columns:1fr;
+  align-items:center; padding:2rem 2rem 2rem var(--strip-width); animation:fadein .9s both;
+}
+.login{justify-self:center; width:min(520px,100%)}
+h1{font-family:'Cormorant Garamond',serif; font-size:clamp(1.9rem,3.6vw,3rem); line-height:1.05; margin:0; color:var(--title); white-space:nowrap}
+.quote{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:600; font-size:1.2rem; line-height:1.35; color:var(--quote); margin:.5rem 0 1.4rem; min-height:6.2em; transition:opacity .6s}
+.quote.fade{opacity:0}
+h2{font-family:'Cormorant Garamond',serif; font-size:2rem; margin:0 0 .8rem; color:var(--title)}
+form{display:grid; gap:.9rem}
+input{width:100%; padding:.9rem 1rem; font:inherit; border:1.5px solid transparent; border-radius:12px; background:#fff; transition:box-shadow .2s,border-color .2s}
+input:focus{outline:none; border-color:var(--medium); box-shadow:0 0 0 4px rgba(167,151,219,.35)}
+button{padding:.9rem; font:inherit; font-weight:700; border-radius:999px; cursor:pointer; border:1.5px solid transparent; background:#fff; color:var(--dark); transition:transform .2s,box-shadow .2s}
+button:hover{transform:translateY(-2px); box-shadow:0 8px 16px rgba(108,91,158,.25)}
+button.main{background:linear-gradient(135deg,var(--dark),var(--medium)); color:#fff}
+.note{min-height:1.4em; margin:.8rem 0 0; font-size:.92rem; color:#9b3d70}
+
+@media(max-width:760px){
+  .strip,.char,.hide-small{display:none}
+  .stage{padding:1.2rem}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+
+<body>
+
+<!-- Drawings used by the doodles. You do not need to change this part. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="book" viewBox="0 0 60 60"><path d="M30 16c-6-5-16-6-24-4v34c8-2 18-1 24 4 6-5 16-6 24-4V12c-8-2-18-1-24 4zM30 16v34"/></symbol>
+  <symbol id="stack" viewBox="0 0 60 60"><path d="M8 48h44v7H8zM12 38h38v7H12zM9 28h36v7H9z"/></symbol>
+  <symbol id="bookmark" viewBox="0 0 60 60"><path d="M18 6h24v48l-12-11-12 11z"/></symbol>
+  <symbol id="glasses" viewBox="0 0 60 60"><path d="M6 34a10 10 0 1 0 20 0a10 10 0 1 0-20 0M34 34a10 10 0 1 0 20 0a10 10 0 1 0-20 0M26 33c2-3 6-3 8 0M6 33L2 28M54 33l4-5"/></symbol>
+  <symbol id="quill" viewBox="0 0 60 60"><path d="M52 6C32 8 20 22 15 44l-8 10M15 44C26 44 44 32 52 6M23 34l10-1M28 25l9-1"/></symbol>
+  <symbol id="cup" viewBox="0 0 60 60"><path d="M12 24h30v14c0 8-6 14-15 14s-15-6-15-14zM42 28h5c5 0 5 10 0 10h-5M20 8c-3 4 3 5 0 9M30 8c-3 4 3 5 0 9"/></symbol>
+  <symbol id="candle" viewBox="0 0 60 60"><path d="M22 28h16v26H22zM30 10c-5 7-4 11 0 13 4-2 5-6 0-13zM30 23v5"/></symbol>
+  <symbol id="pencil" viewBox="0 0 60 60"><path d="M10 50l4-12 28-28 8 8-28 28zM38 14l8 8"/></symbol>
+  <symbol id="leaf" viewBox="0 0 60 60"><path d="M10 50C8 24 26 8 52 8c0 26-14 44-40 42zM10 50L36 24"/></symbol>
+  <symbol id="star" viewBox="0 0 60 60"><path d="M30 6l7 15 16 2-12 11 3 16-14-8-14 8 3-16L7 23l16-2z"/></symbol>
+  <symbol id="heart" viewBox="0 0 60 60"><path d="M30 50C10 36 6 22 16 14c6-5 12-1 14 4 2-5 8-9 14-4 10 8 6 22-14 36z"/></symbol>
+  <symbol id="sparkle" viewBox="0 0 60 60"><path d="M30 4c2 14 6 22 26 26-20 4-24 12-26 26-2-14-6-22-26-26 20-4 24-12 26-26z"/></symbol>
+  <symbol id="moon" viewBox="0 0 60 60"><path d="M40 8a22 22 0 1 0 12 34A18 18 0 0 1 40 8z"/></symbol>
+</svg>
+
+<!-- ✏️ CHANGE 3: DOODLES. Each line is one drawing.
+     use href="#book" = which drawing:
+        book, stack, bookmark, glasses, quill, cup, candle, pencil, leaf, star, heart, sparkle, moon
+     class: float, drift or twinkle = how it moves.  big, mid or small = size
+     style: left/right and top/bottom = where it sits (in %).  color = its color.
+     Delete a line to remove a doodle, copy a line to add one. -->
+<div class="doodles" aria-hidden="true">
+  <svg class="d big float"   style="left:15%;  top:6%;    color:#6C5B9E"><use href="#book"/></svg>
+  <svg class="d small twinkle" style="left:30%; top:4%;   color:#A797DB; animation-delay:-1s"><use href="#sparkle"/></svg>
+  <svg class="d mid float"   style="left:60%;  top:5%;    color:#e79bbf; animation-delay:-2s"><use href="#heart"/></svg>
+  <svg class="d big drift"   style="right:5%;  top:7%;    color:#A797DB; animation-delay:-3s"><use href="#moon"/></svg>
+  <svg class="d small twinkle hide-small" style="right:8%; top:30%; color:#e79bbf; animation-delay:-2s"><use href="#star"/></svg>
+  <svg class="d mid drift hide-small" style="left:14%; top:38%; color:#6C5B9E; animation-delay:-4s"><use href="#glasses"/></svg>
+  <svg class="d mid float hide-small" style="left:16%; top:62%; color:#A797DB; animation-delay:-5s"><use href="#cup"/></svg>
+  <svg class="d mid drift hide-small" style="right:12%; top:52%; color:#6C5B9E; animation-delay:-1s"><use href="#quill"/></svg>
+  <svg class="d big float"   style="left:14%;  bottom:6%; color:#e79bbf; animation-delay:-3s"><use href="#stack"/></svg>
+  <svg class="d mid float"   style="left:32%;  bottom:5%; color:#A797DB; animation-delay:-6s"><use href="#candle"/></svg>
+  <svg class="d mid drift"   style="left:50%;  bottom:6%; color:#6C5B9E; animation-delay:-2s"><use href="#bookmark"/></svg>
+  <svg class="d mid float"   style="left:66%;  bottom:5%; color:#e79bbf; animation-delay:-4s"><use href="#leaf"/></svg>
+  <svg class="d small drift hide-small" style="right:26%; bottom:12%; color:#A797DB; animation-delay:-5s"><use href="#pencil"/></svg>
+  <svg class="d small twinkle hide-small" style="left:24%; bottom:22%; color:#6C5B9E; animation-delay:-3s"><use href="#sparkle"/></svg>
+</div>
+
+<!-- THREE PICTURES ON THE LEFT EDGE (they stay still) -->
+<div class="strip" aria-hidden="true">
+  <div class="tile" id="tile0"></div>
+  <div class="tile" id="tile1"></div>
+  <div class="tile" id="tile2"></div>
+</div>
+
+<main class="stage">
+  <div class="login">
+    <!-- ✏️ CHANGE 4: the big title -->
+    <h1>My Reading Nook</h1>
+    <!-- ✏️ CHANGE 5: the first quote shown. All your quotes are listed in CHANGE 9 below. -->
+    <p class="quote" id="quoteText">Every book you finish becomes part of you.</p>
+
+    <!-- ✏️ CHANGE 6: the heading above the login boxes -->
+    <h2>Welcome back</h2>
+    <form id="loginForm">
+      <input type="email" placeholder="Email" required>
+      <input type="password" placeholder="Password" required>
+      <button class="main" type="submit">Log in</button>
+      <button type="button" id="signupBtn">Create account</button>
+    </form>
+    <p class="note" id="note"></p>
+  </div>
+</main>
+
+<script>
+/* ✏️ CHANGE 7: YOUR PICTURES.
+   Write the picture names WITHOUT the ending (no .jpg, .jpeg, .png).
+   The page finds the right ending by itself.
+   Example: a file called pic1.jpg is written as  "images/pic1"
+   The last name in a list has no comma. */
+
+// The 3 pictures on the left edge that STAY STILL, from top to bottom
+const stripPictures = ["images/pic11", "images/pic10", "images/pic9"];
+
+// The girl in the bottom right corner (she sways a little)
+const character = "images/pic8";
+
+
+/* ✏️ CHANGE 9: YOUR QUOTES. They appear one after another under the title.
+   Each quote goes inside "quote marks", with a comma at the end.
+   The last one has no comma. Add as many as you like. */
+const quotes = [
+  "Every book you finish becomes part of you.",
+  "She read books as one breathes air, to fill up and live",
+  "I declare after all there is no enjoyment like reading! How much sooner one tires of any thing than of a book! — When I have a house of my own, I shall be miserable if I have not an excellent library"
+];
+
+// How fast the quotes change. 8000 = 8 seconds.
+const quoteSpeed = 8000;
+
+
+/* ---- you do not need to change anything below this line ---- */
+const endings = [".jpeg", ".jpg", ".png", ".webp", ".jfif", ".gif", ".JPG", ".JPEG", ".PNG"];
+
+function loadAny(base, done, i){
+  i = i || 0;
+  if (i >= endings.length) return;           // no file found: skip it
+  const img = new Image();
+  img.alt = "";
+  img.onload = function(){ done(img); };
+  img.onerror = function(){ loadAny(base, done, i + 1); };
+  img.src = base + endings[i];
+}
+
+// the still pictures on the left edge
+stripPictures.forEach(function(base, i){
+  loadAny(base, function(img){
+    document.getElementById("tile" + i).appendChild(img);
+  });
+});
+
+// the girl in the corner
+loadAny(character, function(img){
+  img.className = "char";
+  document.body.appendChild(img);
+});
+
+// the quotes
+(function(){
+  const p = document.getElementById("quoteText");
+  let q = 0;
+  setInterval(function(){
+    p.classList.add("fade");
+    setTimeout(function(){
+      q = (q + 1) % quotes.length;
+      p.textContent = quotes[q];
+      p.classList.remove("fade");
+    }, 600);
+  }, quoteSpeed);
+})();
+
+/* The buttons only show a message for now. The next step connects real login. */
+const note = document.getElementById("note");
+document.getElementById("loginForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  note.textContent = "Login is not connected yet. That is the next step.";
+});
+document.getElementById("signupBtn").addEventListener("click", function(){
+  note.textContent = "Create account is not connected yet. That is the next step.";
+});
+</script>
+</body>
+</html>
