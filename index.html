@@ -142,6 +142,7 @@ button.main{background:linear-gradient(135deg,var(--dark),var(--medium)); color:
     <!-- ✏️ CHANGE 6: the heading above the login boxes -->
     <h2>Welcome back</h2>
     <form id="loginForm">
+      <input id="nameInput" type="text" maxlength="30" placeholder="User ID (the name you want to be called)" autocomplete="nickname">
       <input id="email" type="email" placeholder="Email" autocomplete="username" required>
       <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
       <button class="main" type="submit">Log in</button>
@@ -231,7 +232,7 @@ loadAny(character, function(img){
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,updateProfile} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* ✏️ CHANGE 10: YOUR FIREBASE SETTINGS (already filled in for you). */
 const firebaseConfig = {
@@ -271,19 +272,39 @@ function onlineCheck(){
   return true;
 }
 
+// Shows "Welcome, <your User ID>" (or the start of your email if no User ID was saved)
+function showHello(user){
+  if (!user) return;
+  $("hello").textContent = "Welcome, " + (user.displayName || user.email.split("@")[0]);
+}
+
+// Saves the User ID you typed, so it is remembered every time you log in
+async function saveName(){
+  const name = $("nameInput").value.trim();
+  const user = auth.currentUser;
+  if (user && name && name !== user.displayName){
+    await updateProfile(user, {displayName: name});
+  }
+  showHello(user);
+}
+
 $("loginForm").addEventListener("submit", async function(e){
   e.preventDefault(); say("");
   if (!onlineCheck()) return;
-  try { await signInWithEmailAndPassword(auth, $("email").value, $("password").value); }
-  catch (err) { say(friendly(err)); }
+  try {
+    await signInWithEmailAndPassword(auth, $("email").value, $("password").value);
+    await saveName();   // if you typed a User ID, remember it
+  } catch (err) { say(friendly(err)); }
 });
 
 $("signupBtn").addEventListener("click", async function(){
   say("");
   if (!onlineCheck()) return;
   if (!$("email").value || !$("password").value){ say("Type your email and a password first."); return; }
-  try { await createUserWithEmailAndPassword(auth, $("email").value, $("password").value); }
-  catch (err) { say(friendly(err)); }
+  try {
+    await createUserWithEmailAndPassword(auth, $("email").value, $("password").value);
+    await saveName();   // save the User ID you typed
+  } catch (err) { say(friendly(err)); }
 });
 
 $("resetBtn").addEventListener("click", async function(){
@@ -301,7 +322,7 @@ onAuthStateChanged(auth, function(user){
   $("loginBox").hidden = !!user;
   $("welcomeBox").hidden = !user;
   if (user){
-    $("hello").textContent = "Welcome, " + user.email.split("@")[0];
+    showHello(user);
     $("password").value = "";
   }
 });
